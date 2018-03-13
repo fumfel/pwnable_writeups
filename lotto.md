@@ -1,6 +1,6 @@
 ## lotto - 2 pt ##
 
-Flaga: `abc`
+Flaga: `sorry mom... I FORGOT to check duplicate numbers... :(`
 
 Kod źródłowy **lotto.c**:
 
@@ -102,4 +102,31 @@ int main(int argc, char* argv[]){
 	}
 	return 0;
 }
+```
+* Pierwszym krokiem jest zwrócenie uwagi na tablicę zawierającą input od usera: `unsigned char submit[6];` - zawiera znaki drukowalne z zakresu ASCII
+* Czytając help do zadania dowiadujemy się, że rozwiązanie zawiera cyfry od 1 do 46: `lotto is consisted with 6 random natural numbers less than 46`
+* Sprawdzając tablicę ASCII w zakresie rozwiązań lotto ze znaków drukowalnych na konsolę mamy: `!"#$%&'()*+,-`
+* Clue zadania opiera się o subtelną podatność w pętli sprawdzającej rozwiązanie:
+```c
+// calculate lotto score
+int match = 0, j = 0;
+for(i=0; i<6; i++){
+	for(j=0; j<6; j++){
+		if(lotto[i] == submit[j]){
+			match++;
+		}
+	}
+}
+```
+* W przypadku "trafienia" jednego poprawnego bajtu i podaniu tego bajtu w inpucie sześć razy jesteśmy w stanie "manipulować" wartością zmiennej `match`, która determinuje wygraną.
+* Jeżeli jest to, mówiąc kolokwialnie nieco "zamotane": pętla przechodzi po każdej wartości i nie sprawdza zduplikowanych bajtów
+* W efekcie podanie sześciu takich samych znaków z zakresu `!"#$%&'()*+,-` i "trafienie" spowoduje wyświetlenie flagi:
+```
+Submit your 6 lotto bytes : ######
+Lotto Start!
+sorry mom... I FORGOT to check duplicate numbers... :(
+- Select Menu -
+1. Play Lotto
+2. Help
+3. Exit
 ```
