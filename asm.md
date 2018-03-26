@@ -2,6 +2,9 @@
 
 Flaga: `mock`
 
+Readme: `once you connect to port 9026, the "asm" binary will be executed under asm_pwn privilege.
+make connection to challenge (nc 0 9026) then get the flag. (file name of the flag is same as the one in this directory)`
+
 Kod źródłowy **asm.c**:
 
 ```c
