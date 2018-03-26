@@ -64,3 +64,39 @@ int main(int argc, char* argv[]){
 	return 0;
 }
 ```
+* Output z checksec:
+```
+asm@ubuntu:~$ checksec asm
+[*] '/home/asm/asm'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    No canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+```
+* Binarka posiada "sandbox'a" zbudowanego na SECCOMP - piaskownica filtruje syscalle i dopuszcza dla wątku jedynie operacje:
+  * `SCMP_SYS(open)`
+  * `SCMP_SYS(read)`
+  * `SCMP_SYS(write)`
+  * `SCMP_SYS(exit)`
+  * `SCMP_SYS(exit_group)`
+* Każda inna operacja zabija wątek, bez możliwości przechwycenia sygnału
+* Bajty "shellcode" ze zmiennej `stub` na platformie x64 odpowiadają następującym instrukcjom:
+```asm
+   0:   48 31 c0                xor    rax,rax
+   3:   48 31 db                xor    rbx,rbx
+   6:   48 31 c9                xor    rcx,rcx
+   9:   48 31 d2                xor    rdx,rdx
+   c:   48 31 f6                xor    rsi,rsi
+   f:   48 31 ff                xor    rdi,rdi
+  12:   48 31 ed                xor    rbp,rbp
+  15:   4d 31 c0                xor    r8,r8
+  18:   4d 31 c9                xor    r9,r9
+  1b:   4d 31 d2                xor    r10,r10
+  1e:   4d 31 db                xor    r11,r11
+  21:   4d 31 e4                xor    r12,r12
+  24:   4d 31 ed                xor    r13,r13
+  27:   4d 31 f6                xor    r14,r14
+  2a:   4d 31 ff                xor    r15,r15
+  2d:   20                      .byte 0x20
+```
