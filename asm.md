@@ -83,6 +83,7 @@ asm@ubuntu:~$ checksec asm
   * `SCMP_SYS(write)`
   * `SCMP_SYS(exit)`
   * `SCMP_SYS(exit_group)`
+* Wszystko o SECCOMP do zadania można znaleźć tutaj: http://man7.org/linux/man-pages/man3/seccomp_init.3.html
 * Każda inna operacja zabija wątek, bez możliwości przechwycenia sygnału
 * Bajty "shellcode" ze zmiennej `stub` na platformie x64 odpowiadają następującym instrukcjom:
 ```asm
