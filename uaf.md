@@ -126,3 +126,48 @@ uaf@ubuntu:~$ checksec uaf
    0x0000000000400ff9 <+309>:	call   rdx
    0x0000000000400ffb <+311>:	jmp    0x4010a9 <main+485>
 ```
+* Instrukcje w powyższym listingu są prawie identyczne, różnice następują jedynie w odwołaniach do adresów pamięci: `[rbp-0x38]` vs `[rbp-0x30]`
+* Stawiając breakpointa w adresie z początku listingu i "przechodząc" wykonanie, krok po kroku możemy zauważyć, że w pewnym momencie w rejestrach `RAX` i `RBX` pojawia się interesujący adres - metody `give_shell()`:
+```
+ [----------------------------------registers-----------------------------------]
+RAX: 0x401570 --> 0x40117a (<_ZN5Human10give_shellEv>:	push   rbp)
+RBX: 0x614ca0 --> 0x401550 --> 0x40117a (<_ZN5Human10give_shellEv>:	push   rbp)
+RCX: 0x0 
+RDX: 0x7fffffffdb48 --> 0x1 
+RSI: 0x0 
+RDI: 0x7ffff7dd6140 --> 0x0 
+RBP: 0x7fffffffdb60 --> 0x4013b0 (<__libc_csu_init>:	mov    QWORD PTR [rsp-0x28],rbp)
+RSP: 0x7fffffffdb00 --> 0x7fffffffdc48 --> 0x7fffffffe062 ("uaf")
+RIP: 0x400fd4 (<main+272>:	add    rax,0x8)
+R8 : 0x7ffff78398e0 --> 0xfbad2288 
+R9 : 0x7ffff783b790 --> 0x0 
+R10: 0x7ffff7fba740 (0x00007ffff7fba740)
+R11: 0x7ffff7b5b930 (<_ZNKSt7num_getIcSt19istreambuf_iteratorIcSt11char_traitsIcEEE14_M_extract_intIjEES3_S3_S3_RSt8ios_baseRSt12_Ios_IostateRT_>:	push   r15)
+R12: 0x7fffffffdb20 --> 0x614c88 --> 0x6c6c694a ('Jill')
+R13: 0x7fffffffdc40 --> 0x3 
+R14: 0x0 
+R15: 0x0
+EFLAGS: 0x246 (carry PARITY adjust ZERO sign trap INTERRUPT direction overflow)
+[-------------------------------------code-------------------------------------]
+   0x400fc8 <main+260>:	jmp    0x4010a9 <main+485>
+   0x400fcd <main+265>:	mov    rax,QWORD PTR [rbp-0x38]
+   0x400fd1 <main+269>:	mov    rax,QWORD PTR [rax]
+=> 0x400fd4 <main+272>:	add    rax,0x8
+   0x400fd8 <main+276>:	mov    rdx,QWORD PTR [rax]
+   0x400fdb <main+279>:	mov    rax,QWORD PTR [rbp-0x38]
+   0x400fdf <main+283>:	mov    rdi,rax
+   0x400fe2 <main+286>:	call   rdx
+[------------------------------------stack-------------------------------------]
+0000| 0x7fffffffdb00 --> 0x7fffffffdc48 --> 0x7fffffffe062 ("uaf")
+0008| 0x7fffffffdb08 --> 0x30000ffff 
+0016| 0x7fffffffdb10 --> 0x614c38 --> 0x6b63614a ('Jack')
+0024| 0x7fffffffdb18 --> 0x401177 (<_GLOBAL__sub_I_main+19>:	pop    rbp)
+0032| 0x7fffffffdb20 --> 0x614c88 --> 0x6c6c694a ('Jill')
+0040| 0x7fffffffdb28 --> 0x614c50 --> 0x401570 --> 0x40117a (<_ZN5Human10give_shellEv>:	push   rbp)
+0048| 0x7fffffffdb30 --> 0x614ca0 --> 0x401550 --> 0x40117a (<_ZN5Human10give_shellEv>:	push   rbp)
+0056| 0x7fffffffdb38 --> 0x0 
+[------------------------------------------------------------------------------]
+Legend: code, data, rodata, value
+
+Breakpoint 1, 0x0000000000400fd4 in main ()
+```
