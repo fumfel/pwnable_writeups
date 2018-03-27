@@ -95,3 +95,11 @@ uaf@ubuntu:~$ checksec uaf
     NX:       NX enabled
     PIE:      No PIE
 ```
+* Program na początku alokuje pamięć na (tworzy) dwa obiekty: `man` i `woman`
+* Warto zwrócić uwagę na rozmiar alokacji pamięci dla obiektów, który w obydwu przypadkach wynosi `0x18 (24)` - przyda się to w następnych krokach
+
+```asm
+   0x0000000000400ef7 <+51>:	lea    r12,[rbp-0x50]
+   0x0000000000400efb <+55>:	mov    edi,0x18
+   0x0000000000400f00 <+60>:	call   0x400d90 <_Znwm@plt>
+```
