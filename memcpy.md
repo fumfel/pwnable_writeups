@@ -168,3 +168,125 @@ ellapsed CPU cycles for fast_memcpy : 1050
 experiment 4 : memcpy with buffer size 120
 ellapsed CPU cycles for slow_memcpy : 1818
 ```
+* Niestety poprzez netcata nie da się zdebugować problemu - stderr nie jest przekierowany do socketu obsługującego zadanie
+* Mając kod źródłowy możemy skompilować zadanie u siebie i zobaczyć jaka jest przyczyna problemu (w przypadku korzystania z platformy `amd64` i Ubuntu, przed kompilacją należy zainstalować paczkę `libc6-dev-i386` jeżeli kompilujemy poleceniem podanym w kodzie).
+* Program po uruchomieniu i wczytaniu parametrów kończy się SIGSEGV:
+```
+Hey, I have a boring assignment for CS class.. :(
+The assignment is simple.
+-----------------------------------------------------
+- What is the best implementation of memcpy?        -
+- 1. implement your own slow/fast version of memcpy -
+- 2. compare them with various size of data         -
+- 3. conclude your experiment and submit report     -
+-----------------------------------------------------
+This time, just help me out with my experiment and get flag
+No fancy hacking, I promise :D
+specify the memcpy amount between 8 ~ 16 : 15
+specify the memcpy amount between 16 ~ 32 : 30
+specify the memcpy amount between 32 ~ 64 : 60
+specify the memcpy amount between 64 ~ 128 : 100
+specify the memcpy amount between 128 ~ 256 : 200
+specify the memcpy amount between 256 ~ 512 : 400
+specify the memcpy amount between 512 ~ 1024 : 1000
+specify the memcpy amount between 1024 ~ 2048 : 2000
+specify the memcpy amount between 2048 ~ 4096 : 4000
+specify the memcpy amount between 4096 ~ 8192 : 8000
+ok, lets run the experiment with your configuration
+experiment 1 : memcpy with buffer size 15
+ellapsed CPU cycles for slow_memcpy : 9579
+ellapsed CPU cycles for fast_memcpy : 1238
+
+experiment 2 : memcpy with buffer size 30
+ellapsed CPU cycles for slow_memcpy : 871
+ellapsed CPU cycles for fast_memcpy : 1033
+
+experiment 3 : memcpy with buffer size 60
+ellapsed CPU cycles for slow_memcpy : 1565
+ellapsed CPU cycles for fast_memcpy : 1521
+
+experiment 4 : memcpy with buffer size 100
+ellapsed CPU cycles for slow_memcpy : 2275
+ellapsed CPU cycles for fast_memcpy : 1735
+
+experiment 5 : memcpy with buffer size 200
+ellapsed CPU cycles for slow_memcpy : 4263
+Segmentation fault (core dumped)
+```
+* Przy pomocy `valgrind` można szybko sprawdzić co dokładnie się stało:
+```
+==19287== Memcheck, a memory error detector
+==19287== Copyright (C) 2002-2015, and GNU GPL'd, by Julian Seward et al.
+==19287== Using Valgrind-3.11.0 and LibVEX; rerun with -h for copyright info
+==19287== Command: ./memcpy
+==19287== 
+Hey, I have a boring assignment for CS class.. :(
+The assignment is simple.
+-----------------------------------------------------
+- What is the best implementation of memcpy?        -
+- 1. implement your own slow/fast version of memcpy -
+- 2. compare them with various size of data         -
+- 3. conclude your experiment and submit report     -
+-----------------------------------------------------
+This time, just help me out with my experiment and get flag
+No fancy hacking, I promise :D
+specify the memcpy amount between 8 ~ 16 : 15
+specify the memcpy amount between 16 ~ 32 : 30
+specify the memcpy amount between 32 ~ 64 : 60
+specify the memcpy amount between 64 ~ 128 : 120
+specify the memcpy amount between 128 ~ 256 : 240
+specify the memcpy amount between 256 ~ 512 : 480
+specify the memcpy amount between 512 ~ 1024 : 960
+specify the memcpy amount between 1024 ~ 2048 : 1920
+specify the memcpy amount between 2048 ~ 4096 : 3840
+specify the memcpy amount between 4096 ~ 8192 : 7680
+ok, lets run the experiment with your configuration
+experiment 1 : memcpy with buffer size 15
+ellapsed CPU cycles for slow_memcpy : 1934385
+ellapsed CPU cycles for fast_memcpy : 1598857
+
+experiment 2 : memcpy with buffer size 30
+ellapsed CPU cycles for slow_memcpy : 13243
+ellapsed CPU cycles for fast_memcpy : 6961
+
+experiment 3 : memcpy with buffer size 60
+ellapsed CPU cycles for slow_memcpy : 7202
+ellapsed CPU cycles for fast_memcpy : 8040
+
+experiment 4 : memcpy with buffer size 120
+ellapsed CPU cycles for slow_memcpy : 11582
+==19287== 
+==19287== Process terminating with default action of signal 11 (SIGSEGV)
+==19287==  General Protection Fault
+==19287==    at 0x80487CC: fast_memcpy (memcpy.c:29)
+==19287==    by 0x8048B8A: main (memcpy.c:115)
+==19287== 
+==19287== HEAP SUMMARY:
+==19287==     in use at exit: 225 bytes in 4 blocks
+==19287==   total heap usage: 5 allocs, 1 frees, 1,249 bytes allocated
+==19287== 
+==19287== LEAK SUMMARY:
+==19287==    definitely lost: 105 bytes in 3 blocks
+==19287==    indirectly lost: 0 bytes in 0 blocks
+==19287==      possibly lost: 0 bytes in 0 blocks
+==19287==    still reachable: 120 bytes in 1 blocks
+==19287==         suppressed: 0 bytes in 0 blocks
+==19287== Rerun with --leak-check=full to see details of leaked memory
+==19287== 
+==19287== For counts of detected and suppressed errors, rerun with: -v
+==19287== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+```
+* Problem znajduje się w 29 linijce kodu czyli we wstawce assemblera - funkcja `fast_memcpy()`:
+```c
+__asm__ __volatile__ (
+"movdqa (%0), %%xmm0\n"
+"movdqa 16(%0), %%xmm1\n"
+"movdqa 32(%0), %%xmm2\n"
+"movdqa 48(%0), %%xmm3\n"
+"movntps %%xmm0, (%1)\n"
+"movntps %%xmm1, 16(%1)\n"
+"movntps %%xmm2, 32(%1)\n"
+"movntps %%xmm3, 48(%1)\n"
+::"r"(src),"r"(dest):"memory");
+```
+
