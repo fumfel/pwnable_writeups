@@ -305,4 +305,98 @@ char* fast_memcpy(char* dest, const char* src, size_t len){
 	return dest;
 }
 ```
+* Wstawka zawiera tylko dwa rodzaje instrukcji - nie jest wymagane dużo grzebania w dokumentacji odnośnie charakterystyki ich działania:
+  * `movdqa` - czyli `Move Aligned Double Quadword`
+  * `movntps` - `Store Packed Single-Precision Floating-Point Values Using Non-Temporal Hint`. 
+  * Lektura dokumentacji (http://www.felixcloutier.com/x86/MOVNTPS.html & http://www.felixcloutier.com/x86/MOVDQA:VMOVDQA32:VMOVDQA64.html) w obydwu przypadkach mówi jasno - `The memory operand must be aligned on a 16-byte (128-bit version), 32-byte (VEX.256 encoded version) or 64-byte (EVEX.512 encoded version) boundary otherwise a general-protection exception (#GP) will be generated.`
+* Skoro już wiemy, że problemem jest odpowiednie wyrównanie pamięci, warto zmodyfikować kod źródłowy programu celem poznania wartości adresów podczas uruchomienia:
+```c
+// run experiment
+	for(i=0; i<10; i++){
+		size = sizes[i];
+		printf("experiment %d : memcpy with buffer size %d\n", i+1, size);
+		dest = malloc( size );
+
+		printf("** DST: 0x%x **\n", dest);
+		printf("** SRC: 0x%x **\n", src);
+
+		memcpy(cache1, cache2, 0x4000);		// to eliminate cache effect
+		t1 = rdtsc();
+		slow_memcpy(dest, src, size);		// byte-to-byte memcpy
+		t2 = rdtsc();
+		printf("ellapsed CPU cycles for slow_memcpy : %llu\n", t2-t1);
+
+		memcpy(cache1, cache2, 0x4000);		// to eliminate cache effect
+		t1 = rdtsc();
+		fast_memcpy(dest, src, size);		// block-to-block memcpy
+		t2 = rdtsc();
+		printf("ellapsed CPU cycles for fast_memcpy : %llu\n", t2-t1);
+		printf("\n");
+	}
+```
+* Po uruchomieniu sprawdzamy jak wyrównane są adresy w pamięci procesu (co ciekawe randomowe wartości wygenerowane przeze mnie pozwoliły dojść, aż do siódmego testu - jestem już całkiem blisko bycia białkowym coverage-guided fuzzerem):
+```
+Hey, I have a boring assignment for CS class.. :(
+The assignment is simple.
+-----------------------------------------------------
+- What is the best implementation of memcpy?        -
+- 1. implement your own slow/fast version of memcpy -
+- 2. compare them with various size of data         -
+- 3. conclude your experiment and submit report     -
+-----------------------------------------------------
+This time, just help me out with my experiment and get flag
+No fancy hacking, I promise :D
+specify the memcpy amount between 8 ~ 16 : 15
+specify the memcpy amount between 16 ~ 32 : 30
+specify the memcpy amount between 32 ~ 64 : 60
+specify the memcpy amount between 64 ~ 128 : 120
+specify the memcpy amount between 128 ~ 256 : 250
+specify the memcpy amount between 256 ~ 512 : 370
+specify the memcpy amount between 512 ~ 1024 : 999
+specify the memcpy amount between 1024 ~ 2048 : 1500
+specify the memcpy amount between 2048 ~ 4096 : 2500
+specify the memcpy amount between 4096 ~ 8192 : 8000
+ok, lets run the experiment with your configuration
+experiment 1 : memcpy with buffer size 15
+** DST: 0x98e5410 **
+** SRC: 0xf7f62000 **
+ellapsed CPU cycles for slow_memcpy : 9712
+ellapsed CPU cycles for fast_memcpy : 948
+
+experiment 2 : memcpy with buffer size 30
+** DST: 0x98e5428 **
+** SRC: 0xf7f62000 **
+ellapsed CPU cycles for slow_memcpy : 1028
+ellapsed CPU cycles for fast_memcpy : 952
+
+experiment 3 : memcpy with buffer size 60
+** DST: 0x98e5450 **
+** SRC: 0xf7f62000 **
+ellapsed CPU cycles for slow_memcpy : 1674
+ellapsed CPU cycles for fast_memcpy : 1577
+
+experiment 4 : memcpy with buffer size 120
+** DST: 0x98e5490 **
+** SRC: 0xf7f62000 **
+ellapsed CPU cycles for slow_memcpy : 2727
+ellapsed CPU cycles for fast_memcpy : 2275
+
+experiment 5 : memcpy with buffer size 250
+** DST: 0x98e5510 **
+** SRC: 0xf7f62000 **
+ellapsed CPU cycles for slow_memcpy : 5247
+ellapsed CPU cycles for fast_memcpy : 2339
+
+experiment 6 : memcpy with buffer size 370
+** DST: 0x98e5610 **
+** SRC: 0xf7f62000 **
+ellapsed CPU cycles for slow_memcpy : 7526
+ellapsed CPU cycles for fast_memcpy : 2214
+
+experiment 7 : memcpy with buffer size 999
+** DST: 0x98e5788 **
+** SRC: 0xf7f62000 **
+ellapsed CPU cycles for slow_memcpy : 19807
+```
+* Niestety, widać wyraźnie, że ostatnia wartość `0x98e5788` nie jest wyrównana do 16: `0x98e5788h mod 10h = 8`
 
