@@ -278,15 +278,31 @@ ellapsed CPU cycles for slow_memcpy : 11582
 ```
 * Problem znajduje się w 29 linijce kodu czyli we wstawce assemblera - funkcja `fast_memcpy()`:
 ```c
-__asm__ __volatile__ (
-"movdqa (%0), %%xmm0\n"
-"movdqa 16(%0), %%xmm1\n"
-"movdqa 32(%0), %%xmm2\n"
-"movdqa 48(%0), %%xmm3\n"
-"movntps %%xmm0, (%1)\n"
-"movntps %%xmm1, 16(%1)\n"
-"movntps %%xmm2, 32(%1)\n"
-"movntps %%xmm3, 48(%1)\n"
-::"r"(src),"r"(dest):"memory");
+char* fast_memcpy(char* dest, const char* src, size_t len){
+	size_t i;
+	// 64-byte block fast copy
+	if(len >= 64){
+		i = len / 64;
+		len &= (64-1);
+		while(i-- > 0){
+			__asm__ __volatile__ (
+			"movdqa (%0), %%xmm0\n"
+			"movdqa 16(%0), %%xmm1\n"
+			"movdqa 32(%0), %%xmm2\n"
+			"movdqa 48(%0), %%xmm3\n"
+			"movntps %%xmm0, (%1)\n"
+			"movntps %%xmm1, 16(%1)\n"
+			"movntps %%xmm2, 32(%1)\n"
+			"movntps %%xmm3, 48(%1)\n"
+			::"r"(src),"r"(dest):"memory");
+			dest += 64;
+			src += 64;
+		}
+	}
+
+	// byte-to-byte slow copy
+	if(len) slow_memcpy(dest, src, len);
+	return dest;
+}
 ```
 
