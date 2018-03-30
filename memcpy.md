@@ -399,4 +399,70 @@ experiment 7 : memcpy with buffer size 999
 ellapsed CPU cycles for slow_memcpy : 19807
 ```
 * Niestety, widać wyraźnie, że ostatnia wartość `0x98e5788` nie jest wyrównana do 16: `0x98e5788h mod 10h = 8`
+* Wystarczy obciąć rozmiar poprzedniej alokacji tj. 370 o różnicę wynikłą z operacji modulo adresu docelowego z 16
+* Powtarzamy proces do "lokalnego" uzyskania flagi:
+```
+experiment 1 : memcpy with buffer size 15
+** DST: 0x9117010 **
+** SRC: 0xf7f6d000 **
+ellapsed CPU cycles for slow_memcpy : 9680
+ellapsed CPU cycles for fast_memcpy : 783
 
+experiment 2 : memcpy with buffer size 30
+** DST: 0x9117028 **
+** SRC: 0xf7f6d000 **
+ellapsed CPU cycles for slow_memcpy : 936
+ellapsed CPU cycles for fast_memcpy : 940
+
+experiment 3 : memcpy with buffer size 60
+** DST: 0x9117050 **
+** SRC: 0xf7f6d000 **
+ellapsed CPU cycles for slow_memcpy : 1444
+ellapsed CPU cycles for fast_memcpy : 1497
+
+experiment 4 : memcpy with buffer size 120
+** DST: 0x9117090 **
+** SRC: 0xf7f6d000 **
+ellapsed CPU cycles for slow_memcpy : 2654
+ellapsed CPU cycles for fast_memcpy : 2170
+
+experiment 5 : memcpy with buffer size 250
+** DST: 0x9117110 **
+** SRC: 0xf7f6d000 **
+ellapsed CPU cycles for slow_memcpy : 5094
+ellapsed CPU cycles for fast_memcpy : 2270
+
+experiment 6 : memcpy with buffer size 362
+** DST: 0x9117210 **
+** SRC: 0xf7f6d000 **
+ellapsed CPU cycles for slow_memcpy : 7413
+ellapsed CPU cycles for fast_memcpy : 2057
+
+experiment 7 : memcpy with buffer size 983
+** DST: 0x9117380 **
+** SRC: 0xf7f6d000 **
+ellapsed CPU cycles for slow_memcpy : 19800
+ellapsed CPU cycles for fast_memcpy : 1666
+
+experiment 8 : memcpy with buffer size 1452
+** DST: 0x9117760 **
+** SRC: 0xf7f6d000 **
+ellapsed CPU cycles for slow_memcpy : 28593
+ellapsed CPU cycles for fast_memcpy : 3376
+
+experiment 9 : memcpy with buffer size 3993
+** DST: 0x9117d10 **
+** SRC: 0xf7f6d000 **
+ellapsed CPU cycles for slow_memcpy : 78719
+ellapsed CPU cycles for fast_memcpy : 4344
+
+experiment 10 : memcpy with buffer size 6658
+** DST: 0x9118cb0 **
+** SRC: 0xf7f6d000 **
+ellapsed CPU cycles for slow_memcpy : 154977
+ellapsed CPU cycles for fast_memcpy : 5703
+
+thanks for helping my experiment!
+flag : ----- erased in this source code -----
+
+```
