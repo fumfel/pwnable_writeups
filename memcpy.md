@@ -1,6 +1,6 @@
 ## memcpy - 10 pt ##
 
-Flaga: `flag`
+Flaga: `1_w4nn4_br34K_th3_m3m0ry_4lignm3nt`
 
 Readme: `the compiled binary of "memcpy.c" source code (with real flag) will be executed under memcpy_pwn privilege if you connect to port 9022.
 execute the binary by connecting to daemon(nc 0 9022).`
@@ -464,5 +464,71 @@ ellapsed CPU cycles for fast_memcpy : 5703
 
 thanks for helping my experiment!
 flag : ----- erased in this source code -----
+```
+* "Przeklepujemy" wartości z lokalnego uruchomienia na serwerze pwnable i czekamy na flagę:
+```
+memcpy@ubuntu:~$ nc 0 9022
+Hey, I have a boring assignment for CS class.. :(
+The assignment is simple.
+-----------------------------------------------------
+- What is the best implementation of memcpy?        -
+- 1. implement your own slow/fast version of memcpy -
+- 2. compare them with various size of data         -
+- 3. conclude your experiment and submit report     -
+-----------------------------------------------------
+This time, just help me out with my experiment and get flag
+No fancy hacking, I promise :D
+specify the memcpy amount between 8 ~ 16 : 15
+specify the memcpy amount between 16 ~ 32 : 30
+specify the memcpy amount between 32 ~ 64 : 60
+specify the memcpy amount between 64 ~ 128 : 120
+specify the memcpy amount between 128 ~ 256 : 250
+specify the memcpy amount between 256 ~ 512 : 362
+specify the memcpy amount between 512 ~ 1024 : 983
+specify the memcpy amount between 1024 ~ 2048 : 1452
+specify the memcpy amount between 2048 ~ 4096 : 3993
+specify the memcpy amount between 4096 ~ 8192 : 6658
+ok, lets run the experiment with your configuration
+experiment 1 : memcpy with buffer size 15
+ellapsed CPU cycles for slow_memcpy : 1302
+ellapsed CPU cycles for fast_memcpy : 480
 
+experiment 2 : memcpy with buffer size 30
+ellapsed CPU cycles for slow_memcpy : 414
+ellapsed CPU cycles for fast_memcpy : 423
+
+experiment 3 : memcpy with buffer size 60
+ellapsed CPU cycles for slow_memcpy : 780
+ellapsed CPU cycles for fast_memcpy : 759
+
+experiment 4 : memcpy with buffer size 120
+ellapsed CPU cycles for slow_memcpy : 1488
+ellapsed CPU cycles for fast_memcpy : 873
+
+experiment 5 : memcpy with buffer size 250
+ellapsed CPU cycles for slow_memcpy : 3018
+ellapsed CPU cycles for fast_memcpy : 975
+
+experiment 6 : memcpy with buffer size 362
+ellapsed CPU cycles for slow_memcpy : 4344
+ellapsed CPU cycles for fast_memcpy : 777
+
+experiment 7 : memcpy with buffer size 983
+ellapsed CPU cycles for slow_memcpy : 12222
+ellapsed CPU cycles for fast_memcpy : 567
+
+experiment 8 : memcpy with buffer size 1452
+ellapsed CPU cycles for slow_memcpy : 17169
+ellapsed CPU cycles for fast_memcpy : 1275
+
+experiment 9 : memcpy with buffer size 3993
+ellapsed CPU cycles for slow_memcpy : 48762
+ellapsed CPU cycles for fast_memcpy : 2007
+
+experiment 10 : memcpy with buffer size 6658
+ellapsed CPU cycles for slow_memcpy : 85341
+ellapsed CPU cycles for fast_memcpy : 2517
+
+thanks for helping my experiment!
+flag : 1_w4nn4_br34K_th3_m3m0ry_4lignm3nt
 ```
