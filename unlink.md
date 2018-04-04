@@ -1,6 +1,6 @@
 ## unlink - 10 pt ##
 
-Flaga: `mommy now I get what PATH environment is for :)`
+Flaga: ``
 
 Kod źródłowy **unlink.c**:
 
@@ -9,6 +9,7 @@ Kod źródłowy **unlink.c**:
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 typedef struct tagOBJ{
 	struct tagOBJ* fd;
 	struct tagOBJ* bk;
@@ -50,4 +51,13 @@ int main(int argc, char* argv[]){
 	return 0;
 }
 
+```
+* Output z checksec:
+```
+[*] '/home/unlink/unlink'
+    Arch:     i386-32-little
+    RELRO:    Partial RELRO
+    Stack:    No canary found
+    NX:       NX enabled
+    PIE:      No PIE
 ```
